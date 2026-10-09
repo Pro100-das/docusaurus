@@ -1,0 +1,458 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Planner</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#f4f7fb;
+  color:#172033;
+}
+
+header{
+  background:linear-gradient(135deg,#2563eb,#7c3aed);
+  color:white;
+  padding:28px 18px;
+  text-align:center;
+}
+
+header h1{
+  font-size:30px;
+  margin-bottom:8px;
+}
+
+header p{
+  opacity:.9;
+}
+
+.container{
+  max-width:900px;
+  margin:25px auto;
+  padding:0 15px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:18px;
+  margin-bottom:18px;
+  box-shadow:0 5px 20px rgba(0,0,0,.07);
+}
+
+.card h2{
+  margin-bottom:15px;
+  font-size:20px;
+}
+
+input,select,textarea{
+  width:100%;
+  padding:13px;
+  border:1px solid #d5dbea;
+  border-radius:10px;
+  margin-bottom:12px;
+  font-size:15px;
+  outline:none;
+}
+
+input:focus,select:focus,textarea:focus{
+  border-color:#2563eb;
+}
+
+button{
+  border:none;
+  background:#2563eb;
+  color:white;
+  padding:12px 18px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:15px;
+}
+
+button:hover{
+  background:#1d4ed8;
+}
+
+.task{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px;
+  background:#f7f9fc;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+.task input{
+  width:auto;
+  margin:0;
+}
+
+.task span{
+  flex:1;
+}
+
+.completed{
+  text-decoration:line-through;
+  opacity:.5;
+}
+
+.delete{
+  background:#ef4444;
+  padding:7px 10px;
+}
+
+.delete:hover{
+  background:#dc2626;
+}
+
+.progress-box{
+  background:#e5e7eb;
+  height:15px;
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.progress{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#2563eb,#7c3aed);
+  transition:.3s;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+
+.stat{
+  text-align:center;
+  padding:18px 10px;
+  background:#f7f9fc;
+  border-radius:12px;
+}
+
+.stat strong{
+  display:block;
+  font-size:25px;
+  color:#2563eb;
+  margin-bottom:5px;
+}
+
+textarea{
+  min-height:120px;
+  resize:vertical;
+}
+
+footer{
+  text-align:center;
+  padding:25px;
+  color:#777;
+  font-size:13px;
+}
+
+@media(max-width:600px){
+  header h1{
+    font-size:25px;
+  }
+
+  .stats{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>📚 My Study Planner</h1>
+  <p>Plan • Study • Track • Improve</p>
+</header>
+
+<div class="container">
+
+  <!-- Statistics -->
+  <div class="card">
+    <h2>📊 Today's Progress</h2>
+
+    <div class="stats">
+      <div class="stat">
+        <strong id="total">0</strong>
+        Total Tasks
+      </div>
+
+      <div class="stat">
+        <strong id="done">0</strong>
+        Completed
+      </div>
+
+      <div class="stat">
+        <strong id="percent">0%</strong>
+        Progress
+      </div>
+    </div>
+
+    <br>
+
+    <div class="progress-box">
+      <div class="progress" id="progress"></div>
+    </div>
+  </div>
+
+  <!-- Add Task -->
+  <div class="card">
+    <h2>➕ Add Study Task</h2>
+
+    <input id="taskInput"
+           type="text"
+           placeholder="Example: Complete Maths Chapter 5">
+
+    <select id="subject">
+      <option value="Maths">Mathematics</option>
+      <option value="Science">Science</option>
+      <option value="English">English</option>
+      <option value="Bengali">Bengali</option>
+      <option value="History">History</option>
+      <option value="Geography">Geography</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <button onclick="addTask()">Add Task</button>
+  </div>
+
+  <!-- Task List -->
+  <div class="card">
+    <h2>📝 Today's Tasks</h2>
+
+    <div id="taskList">
+      <p style="color:#777;">No tasks added yet.</p>
+    </div>
+  </div>
+
+  <!-- Exam Countdown -->
+  <div class="card">
+    <h2>⏳ Exam Countdown</h2>
+
+    <input type="date" id="examDate">
+
+    <button onclick="setExam()">Set Exam Date</button>
+
+    <br><br>
+
+    <h3 id="countdown">Choose your exam date.</h3>
+  </div>
+
+  <!-- Notes -->
+  <div class="card">
+    <h2>📖 Quick Notes</h2>
+
+    <textarea id="notes"
+      placeholder="Write your important notes here..."></textarea>
+
+    <button onclick="saveNotes()">Save Notes</button>
+
+    <p id="saved" style="margin-top:10px;color:green;"></p>
+  </div>
+
+</div>
+
+<footer>
+  Study Planner • Made with HTML, CSS & JavaScript
+</footer>
+
+
+<script>
+
+let tasks = JSON.parse(localStorage.getItem("studyTasks")) || [];
+
+function saveTasks(){
+  localStorage.setItem("studyTasks",JSON.stringify(tasks));
+}
+
+function addTask(){
+
+  let input = document.getElementById("taskInput");
+  let subject = document.getElementById("subject");
+
+  let text = input.value.trim();
+
+  if(text === ""){
+    alert("Please enter a task.");
+    return;
+  }
+
+  tasks.push({
+    text:text,
+    subject:subject.value,
+    completed:false
+  });
+
+  input.value="";
+
+  saveTasks();
+  displayTasks();
+}
+
+
+function displayTasks(){
+
+  let list = document.getElementById("taskList");
+
+  list.innerHTML="";
+
+  if(tasks.length===0){
+    list.innerHTML='<p style="color:#777;">No tasks added yet.</p>';
+    updateStats();
+    return;
+  }
+
+  tasks.forEach((task,index)=>{
+
+    let div=document.createElement("div");
+    div.className="task";
+
+    div.innerHTML=`
+
+      <input type="checkbox"
+        ${task.completed ? "checked" : ""}
+        onchange="toggleTask(${index})">
+
+      <span class="${task.completed ? "completed":""}">
+        <b>${task.subject}</b><br>
+        ${task.text}
+      </span>
+
+      <button class="delete"
+        onclick="deleteTask(${index})">
+        Delete
+      </button>
+
+    `;
+
+    list.appendChild(div);
+
+  });
+
+  updateStats();
+}
+
+
+function toggleTask(index){
+
+  tasks[index].completed=!tasks[index].completed;
+
+  saveTasks();
+  displayTasks();
+}
+
+
+function deleteTask(index){
+
+  tasks.splice(index,1);
+
+  saveTasks();
+  displayTasks();
+}
+
+
+function updateStats(){
+
+  let total=tasks.length;
+
+  let done=tasks.filter(t=>t.completed).length;
+
+  let percent=total===0 ? 0 : Math.round((done/total)*100);
+
+  document.getElementById("total").innerText=total;
+  document.getElementById("done").innerText=done;
+  document.getElementById("percent").innerText=percent+"%";
+  document.getElementById("progress").style.width=percent+"%";
+}
+
+
+function setExam(){
+
+  let date=document.getElementById("examDate").value;
+
+  if(!date){
+    alert("Please select an exam date.");
+    return;
+  }
+
+  localStorage.setItem("examDate",date);
+
+  updateCountdown();
+}
+
+
+function updateCountdown(){
+
+  let date=localStorage.getItem("examDate");
+
+  if(!date) return;
+
+  let exam=new Date(date+"T00:00:00");
+
+  let now=new Date();
+
+  let difference=exam-now;
+
+  let days=Math.ceil(difference/(1000*60*60*24));
+
+  let countdown=document.getElementById("countdown");
+
+  if(days>0){
+    countdown.innerText=days+" days left until your exam 🚀";
+  }
+  else if(days===0){
+    countdown.innerText="Your exam is today! 🔥";
+  }
+  else{
+    countdown.innerText="Exam date has passed.";
+  }
+}
+
+
+function saveNotes(){
+
+  let notes=document.getElementById("notes").value;
+
+  localStorage.setItem("studyNotes",notes);
+
+  document.getElementById("saved").innerText="✓ Notes saved successfully";
+
+  setTimeout(()=>{
+    document.getElementById("saved").innerText="";
+  },2000);
+}
+
+
+/* Load saved data */
+
+document.getElementById("notes").value =
+  localStorage.getItem("studyNotes") || "";
+
+document.getElementById("examDate").value =
+  localStorage.getItem("examDate") || "";
+
+displayTasks();
+updateCountdown();
+
+</script>
+
+</body>
+</html>
+```
+
+**ব্যবহার:** `index.html` নামে save করে Netlify-তে deploy করলেই হবে। Tasks ও notes browser-এর `localStorage`-এ থাকবে, তাই page refresh করলেও মুছে যাবে না।
